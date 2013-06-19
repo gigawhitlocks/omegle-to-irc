@@ -4,7 +4,7 @@ from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
 from omegletwist import OmegleBot
-
+import random
 
 def trace(func):
     @functools.wraps(func)
@@ -14,7 +14,7 @@ def trace(func):
     return wrapper
 
 
-bridge_bot_dispatch = {}  # eg {'/command': command_func}
+bridge_bot_dispatch = {}  # eg {'command': command_func}
 
 
 def command(f):
@@ -22,7 +22,7 @@ def command(f):
     def command_wrapper(*args, **kwargs):
         return f(*args, **kwargs)
 
-    bridge_bot_dispatch["/%s" % f.__name__] = f
+    bridge_bot_dispatch["%s" % f.__name__] = f
 
 
 class BridgeBotProtocol(irc.IRCClient):
@@ -70,7 +70,7 @@ class BridgeBotProtocol(irc.IRCClient):
             print ("Piping to %r." % self.piping_user)
             self.say(self.factory.channel, "<piping to %r>" % self.piping_user)
         else:
-            self.say(self.factory.channel, 'Usage: /pipe <nick>')
+            self.say(self.factory.channel, 'Usage: pipe <nick>')
 
     @command
     def unpipe(self, *args):
@@ -147,7 +147,7 @@ class BridgeBotProtocol(irc.IRCClient):
         self.say(self.factory.channel, '<stranger disconnected>')
 
         if self.autoconnect:
-            bridge_bot_dispatch['/connect'](self)
+            bridge_bot_dispatch['connect'](self)
         else:
             self.goIdle()
 
@@ -166,7 +166,7 @@ class BridgeBotProtocol(irc.IRCClient):
     @trace
     def recaptchaRequiredCallback(self, *args):
         msg = ("<Omegle requires a captcha."
-               " Solve it using `/captcha <solutiontext>`."
+               " Solve it using `captcha <solutiontext>`."
                " url: %s") % args[1]
 
         self.say(self.factory.channel, msg)
@@ -183,9 +183,16 @@ class BridgeBotProtocol(irc.IRCClient):
 class BridgeBotFactory(protocol.ClientFactory):
     protocol = BridgeBotProtocol
 
-    def __init__(self, channel, nickname='omeglebot'):
+    def generate_nickname(self):
+        adjectives = open("adjectives.txt","r").readlines()
+        nouns = open("nouns.txt","r").readlines()
+        print(random.choice(adjectives)+random.choice(nouns))
+        return random.choice(adjectives).strip()+random.choice(nouns).strip()
+        
+
+    def __init__(self, channel):
         self.channel = channel
-        self.nickname = nickname
+        self.nickname = self.generate_nickname()
 
     def buildProtocol(self, *args, **kw):
         prot = protocol.ClientFactory.buildProtocol(self, *args, **kw)
