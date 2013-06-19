@@ -9,7 +9,7 @@ from omegletwist import OmegleBot
 def trace(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        print "%s(%s %s)" % (func.__name__, args, kwargs)
+        print( "%s(%s %s)" % (func.__name__, args, kwargs))
         return func(*args, **kwargs)
     return wrapper
 
@@ -67,7 +67,7 @@ class BridgeBotProtocol(irc.IRCClient):
     def pipe(self, *args):
         if len(args) > 0:
             self.piping_user = args[0]
-            print "Piping to %r." % self.piping_user
+            print ("Piping to %r." % self.piping_user)
             self.say(self.factory.channel, "<piping to %r>" % self.piping_user)
         else:
             self.say(self.factory.channel, 'Usage: /pipe <nick>')
@@ -101,17 +101,17 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def signedOn(self):
         self.join(self.factory.channel)
-        print "Signed on as %s." % (self.nickname,)
+        print( "Signed on as %s." % (self.nickname,))
 
     def joined(self, channel):
-        print "Joined %s." % (channel,)
+        print ("Joined %s." % (channel,))
         self.goIdle()
 
     def privmsg(self, user, channel, msg):
         user = user.split('!')[0]
 
         if self.piping_user == user and not self.idle:
-            print 'bot:', msg.strip()
+            print ('bot:', msg.strip())
             self.omegle_bot.say(msg.strip())
             return
 
@@ -124,7 +124,7 @@ class BridgeBotProtocol(irc.IRCClient):
                 return
 
         # someone directed a msg at us; need to respond
-        print "<- '%s' (%s)" % (msg, user)
+        print ("<- '%s' (%s)" % (msg, user))
 
         msg_split = msg_rest.split()
         command_name, args = msg_split[0], msg_split[1:]
@@ -133,7 +133,7 @@ class BridgeBotProtocol(irc.IRCClient):
         if command:
             command(self, *args)
         elif not self.idle:
-            print 'bot:', msg_rest
+            print ('bot:', msg_rest)
             self.omegle_bot.say(msg_rest)
 
     def typingCallback(self, *args):
@@ -143,9 +143,7 @@ class BridgeBotProtocol(irc.IRCClient):
         pass
 
     def disconnectCallback(self, *args):
-        print 'disconnected'
-        print
-
+        print ('disconnected')
         self.say(self.factory.channel, '<stranger disconnected>')
 
         if self.autoconnect:
@@ -155,7 +153,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def messageCallback(self, *args):
         msg = args[1][0].encode('utf-8')
-        print 'stranger:', msg
+        print ('stranger:', msg)
 
         if self.piping_user:
             msg = self.piping_user + ': ' + msg
@@ -174,7 +172,7 @@ class BridgeBotProtocol(irc.IRCClient):
         self.say(self.factory.channel, msg)
 
     def connectCallback(self, *args):
-        print 'connected'
+        print ('connected')
         self.say(self.factory.channel, '<stranger connected>')
         self.goActive()
 
@@ -199,16 +197,16 @@ class BridgeBotFactory(protocol.ClientFactory):
         return prot
 
     def clientConnectionLost(self, connector, reason):
-        print "Lost connection (%s), reconnecting." % (reason,)
+        print ("Lost connection (%s), reconnecting." % (reason,))
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "Could not connect: %s" % (reason,)
+        print ("Could not connect: %s" % (reason,))
 
 
 if __name__ == '__main__':
-    reactor.connectTCP('irc.freenode.net',
+    reactor.connectTCP('chat.freenode.net',
                        6667,
-                       BridgeBotFactory('##rochack'),
+                       BridgeBotFactory('##skeeterplayground'),
                       )
     reactor.run()
