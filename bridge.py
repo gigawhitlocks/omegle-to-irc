@@ -156,11 +156,11 @@ class BridgeBotProtocol(irc.IRCClient):
         print ('stranger:', msg)
 
         if self.piping_user and self.first_message:
+            msg = self.piping_user + ': ' + msg
             self.first_message = False
             if self.lines > random.randint(1,4):
                 self.first_message = True
                 self.lines = 1
-            msg = self.piping_user + ': ' + msg
             self.lines += 1
 
         self.say(self.factory.channel, msg)
