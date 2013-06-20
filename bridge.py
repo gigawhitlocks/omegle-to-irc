@@ -24,7 +24,7 @@ def command(f):
 
     bridge_bot_dispatch["%s" % f.__name__] = f
 
-
+import string
 class BridgeBotProtocol(irc.IRCClient):
     """An irc bot that bridges to Omegle conversations."""
 
@@ -35,6 +35,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     idle = False  # hack to force idle on init connect
     piping_user = None
+    first_message = True
     controller = None 
     autoconnect = False
 
@@ -69,6 +70,7 @@ class BridgeBotProtocol(irc.IRCClient):
         if len(args) > 0:
             self.piping_user = args[0]
             print ("Piping to %r." % self.piping_user)
+            self.first_message = True
             self.msg(self.controller, "<piping to %r>" % self.piping_user)
         else:
             self.msg(self.controller, 'Usage: pipe <nick>')
@@ -108,8 +110,8 @@ class BridgeBotProtocol(irc.IRCClient):
         user = user.split('!')[0]
         # if the target is talking & bot isnt idle
         if self.piping_user == user and not self.idle:
-            print ('bot:', msg.strip())
-            self.omegle_bot.say(msg.strip())
+            print ('bot:', string.replace(msg.strip(), self.nickname, "stranger"))
+            self.omegle_bot.say(string.replace(msg.strip(),self.nickname, "stranger"))
             return
 
         if channel == self.nickname and user == self.controller:
@@ -145,7 +147,8 @@ class BridgeBotProtocol(irc.IRCClient):
         msg = args[1][0].encode('utf-8')
         print ('stranger:', msg)
 
-        if self.piping_user:
+        if self.piping_user and self.first_message:
+            self.first_message = False
             msg = self.piping_user + ': ' + msg
 
         self.say(self.factory.channel, msg)
@@ -180,7 +183,7 @@ class BridgeBotFactory(protocol.ClientFactory):
     def generate_nickname(self):
         adjectives = open("adjectives.txt","r").readlines()
         nouns = open("nouns.txt","r").readlines()
-        return random.choice(adjectives).strip()+random.choice(nouns).strip()
+        return random.choice(adjectives).strip()+random.choice(["_",".","-"])+random.choice(nouns).strip()
         
     def __init__(self, channel):
         self.channel = channel
