@@ -35,6 +35,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     idle = False  # hack to force idle on init connect
     piping_user = None
+    controller = "unknownmosquito" 
     autoconnect = False
 
     @command
@@ -55,9 +56,9 @@ class BridgeBotProtocol(irc.IRCClient):
 
     @command
     def help(self, *args):
-        self.say(self.factory.channel, 'Possible commands:')
+        self.msg(self.controller, 'Possible commands:')
         for cmd_name in sorted(bridge_bot_dispatch.keys()):
-            self.say(self.factory.channel, "  %s" % cmd_name)
+            self.msg(self.controller, "  %s" % cmd_name)
 
     @command
     def captcha(self, *args):
@@ -68,36 +69,32 @@ class BridgeBotProtocol(irc.IRCClient):
         if len(args) > 0:
             self.piping_user = args[0]
             print ("Piping to %r." % self.piping_user)
-            self.say(self.factory.channel, "<piping to %r>" % self.piping_user)
+            self.msg(self.controller, "<piping to %r>" % self.piping_user)
         else:
-            self.say(self.factory.channel, 'Usage: pipe <nick>')
+            self.msg(self.controller, 'Usage: pipe <nick>')
 
     @command
     def unpipe(self, *args):
-        self.say(self.factory.channel, "<no longer piping to %r>" % self.piping_user)
+        self.msg(self.controller, "<no longer piping to %r>" % self.piping_user)
         self.piping_user = None
 
     @command
     def popcorn(self, *args):
-        self.say(self.factory.channel, '<will auto-reconnect>')
+        self.msg(self.controller, '<will auto-reconnect>')
         self.autoconnect = True
 
     @command
     def unpopcorn(self, *args):
-        self.say(self.factory.channel, '<will not auto-reconnect>')
+        self.msg(self.controller, '<will not auto-reconnect>')
         self.autoconnect = False
 
     def goIdle(self):
         if not self.idle:
             self.idle = True
-            self.setNick(self.idle_nickname)
-            self.away('disconnected')
 
     def goActive(self):
         if self.idle:
             self.idle = False
-            self.setNick(self.active_nickname)
-            self.back()
 
     def signedOn(self):
         self.join(self.factory.channel)
@@ -109,32 +106,26 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def privmsg(self, user, channel, msg):
         user = user.split('!')[0]
-
+        print("%s, %s, %s" %(user, channel, msg))
+        # if the target is talking & bot isnt idle
         if self.piping_user == user and not self.idle:
             print ('bot:', msg.strip())
             self.omegle_bot.say(msg.strip())
             return
 
-        try:
-            to, msg_rest = [s.strip() for s in msg.split(':')]
-        except ValueError:
-            return  # no colon
-        else:
-            if to != self.nickname or user == self.nickname:
-                return
-
+        if channel == self.nickname :
         # someone directed a msg at us; need to respond
-        print ("<- '%s' (%s)" % (msg, user))
+            print ("<- '%s' (%s)" % (msg, user))
 
-        msg_split = msg_rest.split()
-        command_name, args = msg_split[0], msg_split[1:]
+            msg_split = msg.split()
+            command_name, args = msg_split[0], msg_split[1:]
 
-        command = bridge_bot_dispatch.get(command_name)
-        if command:
-            command(self, *args)
-        elif not self.idle:
-            print ('bot:', msg_rest)
-            self.omegle_bot.say(msg_rest)
+            command = bridge_bot_dispatch.get(command_name)
+            if command:
+                command(self, *args)
+            elif not self.idle:
+                print ('bot:', msg)
+                self.omegle_bot.say(msg)
 
     def typingCallback(self, *args):
         pass
@@ -144,7 +135,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def disconnectCallback(self, *args):
         print ('disconnected')
-        self.say(self.factory.channel, '<stranger disconnected>')
+        self.msg(self.controller, '<stranger disconnected>')
 
         if self.autoconnect:
             bridge_bot_dispatch['connect'](self)
@@ -157,11 +148,14 @@ class BridgeBotProtocol(irc.IRCClient):
 
         if self.piping_user:
             msg = self.piping_user + ': ' + msg
+
         self.say(self.factory.channel, msg)
+
+
 
     @trace
     def recaptchaFailedCallback(self, *args):
-        self.say(self.factory.channel, '<captcha was incorrect>')
+        self.msg(self.controller, '<captcha was incorrect>')
 
     @trace
     def recaptchaRequiredCallback(self, *args):
@@ -169,11 +163,11 @@ class BridgeBotProtocol(irc.IRCClient):
                " Solve it using `captcha <solutiontext>`."
                " url: %s") % args[1]
 
-        self.say(self.factory.channel, msg)
+        self.msg(self.controller, msg)
 
     def connectCallback(self, *args):
         print ('connected')
-        self.say(self.factory.channel, '<stranger connected>')
+        self.msg(self.controller, '<stranger connected>')
         self.goActive()
 
     def waitingCallback(self, *args):
@@ -186,7 +180,6 @@ class BridgeBotFactory(protocol.ClientFactory):
     def generate_nickname(self):
         adjectives = open("adjectives.txt","r").readlines()
         nouns = open("nouns.txt","r").readlines()
-        print(random.choice(adjectives)+random.choice(nouns))
         return random.choice(adjectives).strip()+random.choice(nouns).strip()
         
 
@@ -194,11 +187,12 @@ class BridgeBotFactory(protocol.ClientFactory):
         self.channel = channel
         self.nickname = self.generate_nickname()
 
+
     def buildProtocol(self, *args, **kw):
         prot = protocol.ClientFactory.buildProtocol(self, *args, **kw)
         prot.nickname = self.nickname
         prot.active_nickname = prot.nickname
-        prot.idle_nickname = prot.nickname + '_idle'
+        prot.idle_nickname = prot.nickname
         prot.omegle_bot = OmegleBot(prot)
 
         return prot
