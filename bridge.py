@@ -145,7 +145,6 @@ class BridgeBotProtocol(irc.IRCClient):
         print ('disconnected')
         self.msg(self.controller, '<stranger disconnected>')
 
-        self.setNick(generate_nickname())
         if self.autoconnect:
             bridge_bot_dispatch['connect'](self)
         else:
