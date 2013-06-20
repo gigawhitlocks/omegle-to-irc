@@ -130,11 +130,9 @@ class BridgeBotProtocol(irc.IRCClient):
             elif not self.idle:
                 print ('bot:', msg)
                 self.omegle_bot.say(msg)
-        elif not self.idle:
+        if not self.idle:
             print ('bot:', string.replace(msg.strip(), self.nickname, "stranger"))
             self.omegle_bot.say(string.replace(msg.strip(),self.nickname, "stranger"))
-            return
-        else:
             return
 
     def typingCallback(self, *args):
@@ -146,6 +144,7 @@ class BridgeBotProtocol(irc.IRCClient):
     def disconnectCallback(self, *args):
         print ('disconnected')
         self.msg(self.controller, '<stranger disconnected>')
+        self.setNick(generate_nickname())
 
         if self.autoconnect:
             bridge_bot_dispatch['connect'](self)
