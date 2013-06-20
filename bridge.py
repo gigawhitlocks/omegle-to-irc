@@ -17,10 +17,10 @@ def trace(func):
 bridge_bot_dispatch = {}  # eg {'command': command_func}
 
 def generate_nickname():
-    adjectives = open("adjectives.txt","r").readlines()
-    nouns = open("nouns.txt","r").readlines()
-    return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
-    
+#    adjectives = open("adjectives.txt","r").readlines()
+#    nouns = open("nouns.txt","r").readlines()
+#    return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
+    return "void_elm" 
 
 
 def command(f):
@@ -31,6 +31,7 @@ def command(f):
     bridge_bot_dispatch["%s" % f.__name__] = f
 
 import string
+import re
 class BridgeBotProtocol(irc.IRCClient):
     """An irc bot that bridges to Omegle conversations."""
 
@@ -117,7 +118,7 @@ class BridgeBotProtocol(irc.IRCClient):
         user = user.split('!')[0]
         # if the target is talking & bot isnt idle
 
-        if channel == self.nickname and user == self.controller:
+        if channel == self.nickname: 
         # the controller directed a msg at us; need to respond
             print ("<- '%s' (%s)" % (msg, user))
 
@@ -131,9 +132,16 @@ class BridgeBotProtocol(irc.IRCClient):
                 print ('bot:', msg)
                 self.omegle_bot.say(msg)
         if not self.idle:
-            print ('bot:', string.replace(msg.strip(), self.nickname, "stranger"))
-            self.omegle_bot.say(string.replace(msg.strip(),self.nickname, "stranger"))
-            return
+            if self.nickname in msg:
+                msg = msg.split(" ")
+                newmsg = []
+                for m in msg:
+                    if self.nickname not in m:
+                        newmsg.append(m)
+                msg = (" ").join(newmsg)
+                print(msg) 
+                self.omegle_bot.say(msg)
+                return
 
     def typingCallback(self, *args):
         pass
@@ -143,7 +151,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def disconnectCallback(self, *args):
         print ('disconnected')
-        self.msg(self.controller, '<stranger disconnected>')
+        self.say(self.factory.channel, '<stranger disconnected>')
         self.setNick(generate_nickname())
 
         if self.autoconnect:
@@ -181,7 +189,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def connectCallback(self, *args):
         print ('connected')
-        self.msg(self.controller, '<stranger connected>')
+        self.say(self.factory.channel, '<stranger connected>')
         self.goActive()
 
     def waitingCallback(self, *args):
