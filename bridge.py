@@ -38,6 +38,7 @@ class BridgeBotProtocol(irc.IRCClient):
     first_message = True
     controller = None 
     autoconnect = False
+    lines = 1
 
     @command
     def connect(self, *args):
@@ -99,6 +100,7 @@ class BridgeBotProtocol(irc.IRCClient):
             self.idle = False
 
     def signedOn(self):
+        self.mode(self.factory.channel, True, 'x', user=self.nickname)
         self.join(self.factory.channel)
         print( "Signed on as %s." % (self.nickname,))
 
@@ -149,7 +151,11 @@ class BridgeBotProtocol(irc.IRCClient):
 
         if self.piping_user and self.first_message:
             self.first_message = False
+            if self.lines > random.randint(2,5):
+                self.first_message = True
+                self.lines = 1
             msg = self.piping_user + ': ' + msg
+            self.lines += 1
 
         self.say(self.factory.channel, msg)
 
@@ -183,7 +189,7 @@ class BridgeBotFactory(protocol.ClientFactory):
     def generate_nickname(self):
         adjectives = open("adjectives.txt","r").readlines()
         nouns = open("nouns.txt","r").readlines()
-        return random.choice(adjectives).strip()+random.choice(["_",".","-"])+random.choice(nouns).strip()
+        return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
         
     def __init__(self, channel):
         self.channel = channel
@@ -219,4 +225,5 @@ if __name__ == '__main__':
             print(x)
         print("Got "+str(len(sys.argv))+" arguments.\nUsage: python2 bridge.py <controller_nick> <server> <port> #<room>")
         sys.exit()
+
     reactor.run()
