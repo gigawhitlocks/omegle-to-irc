@@ -16,6 +16,12 @@ def trace(func):
 
 bridge_bot_dispatch = {}  # eg {'command': command_func}
 
+def generate_nickname():
+    adjectives = open("adjectives.txt","r").readlines()
+    nouns = open("nouns.txt","r").readlines()
+    return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
+    
+
 
 def command(f):
     @functools.wraps(f)
@@ -100,7 +106,6 @@ class BridgeBotProtocol(irc.IRCClient):
             self.idle = False
 
     def signedOn(self):
-        self.mode(self.factory.channel, True, 'x', user=self.nickname)
         self.join(self.factory.channel)
         print( "Signed on as %s." % (self.nickname,))
 
@@ -140,6 +145,7 @@ class BridgeBotProtocol(irc.IRCClient):
         print ('disconnected')
         self.msg(self.controller, '<stranger disconnected>')
 
+        self.setNick(generate_nickname())
         if self.autoconnect:
             bridge_bot_dispatch['connect'](self)
         else:
@@ -185,15 +191,9 @@ class BridgeBotProtocol(irc.IRCClient):
 import sys
 class BridgeBotFactory(protocol.ClientFactory):
     protocol = BridgeBotProtocol
-
-    def generate_nickname(self):
-        adjectives = open("adjectives.txt","r").readlines()
-        nouns = open("nouns.txt","r").readlines()
-        return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
-        
     def __init__(self, channel):
         self.channel = channel
-        self.nickname = self.generate_nickname()
+        self.nickname = generate_nickname()
         self.controller = sys.argv[1] 
 
     def buildProtocol(self, *args, **kw):
