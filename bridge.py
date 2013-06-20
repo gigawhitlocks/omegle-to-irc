@@ -35,7 +35,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     idle = False  # hack to force idle on init connect
     piping_user = None
-    controller = "unknownmosquito" 
+    controller = None 
     autoconnect = False
 
     @command
@@ -82,7 +82,7 @@ class BridgeBotProtocol(irc.IRCClient):
     def popcorn(self, *args):
         self.msg(self.controller, '<will auto-reconnect>')
         self.autoconnect = True
-
+    
     @command
     def unpopcorn(self, *args):
         self.msg(self.controller, '<will not auto-reconnect>')
@@ -106,15 +106,14 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def privmsg(self, user, channel, msg):
         user = user.split('!')[0]
-        print("%s, %s, %s" %(user, channel, msg))
         # if the target is talking & bot isnt idle
         if self.piping_user == user and not self.idle:
             print ('bot:', msg.strip())
             self.omegle_bot.say(msg.strip())
             return
 
-        if channel == self.nickname :
-        # someone directed a msg at us; need to respond
+        if channel == self.nickname and user == self.controller:
+        # the controller directed a msg at us; need to respond
             print ("<- '%s' (%s)" % (msg, user))
 
             msg_split = msg.split()
@@ -174,6 +173,7 @@ class BridgeBotProtocol(irc.IRCClient):
         pass
 
 
+import sys
 class BridgeBotFactory(protocol.ClientFactory):
     protocol = BridgeBotProtocol
 
@@ -182,15 +182,15 @@ class BridgeBotFactory(protocol.ClientFactory):
         nouns = open("nouns.txt","r").readlines()
         return random.choice(adjectives).strip()+random.choice(nouns).strip()
         
-
     def __init__(self, channel):
         self.channel = channel
         self.nickname = self.generate_nickname()
-
+        self.controller = sys.argv[1] 
 
     def buildProtocol(self, *args, **kw):
         prot = protocol.ClientFactory.buildProtocol(self, *args, **kw)
         prot.nickname = self.nickname
+        prot.controller = self.controller
         prot.active_nickname = prot.nickname
         prot.idle_nickname = prot.nickname
         prot.omegle_bot = OmegleBot(prot)
@@ -206,8 +206,14 @@ class BridgeBotFactory(protocol.ClientFactory):
 
 
 if __name__ == '__main__':
-    reactor.connectTCP('chat.freenode.net',
-                       6667,
-                       BridgeBotFactory('##skeeterplayground'),
-                      )
+    if len(sys.argv) == 5:
+        reactor.connectTCP(sys.argv[2],
+                           int(sys.argv[3]),
+                           BridgeBotFactory(sys.argv[4]),
+                          )
+    else:
+        for x in sys.argv:
+            print(x)
+        print("Got "+str(len(sys.argv))+" arguments.\nUsage: python2 bridge.py <controller_nick> <server> <port> #<room>")
+        sys.exit()
     reactor.run()
