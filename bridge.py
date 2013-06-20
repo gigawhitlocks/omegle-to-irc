@@ -116,10 +116,6 @@ class BridgeBotProtocol(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         user = user.split('!')[0]
         # if the target is talking & bot isnt idle
-        if not self.idle:
-            print ('bot:', string.replace(msg.strip(), self.nickname, "stranger"))
-            self.omegle_bot.say(string.replace(msg.strip(),self.nickname, "stranger"))
-            return
 
         if channel == self.nickname and user == self.controller:
         # the controller directed a msg at us; need to respond
@@ -134,6 +130,12 @@ class BridgeBotProtocol(irc.IRCClient):
             elif not self.idle:
                 print ('bot:', msg)
                 self.omegle_bot.say(msg)
+        elif not self.idle:
+            print ('bot:', string.replace(msg.strip(), self.nickname, "stranger"))
+            self.omegle_bot.say(string.replace(msg.strip(),self.nickname, "stranger"))
+            return
+        else:
+            return
 
     def typingCallback(self, *args):
         pass
