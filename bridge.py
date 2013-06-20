@@ -116,7 +116,7 @@ class BridgeBotProtocol(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         user = user.split('!')[0]
         # if the target is talking & bot isnt idle
-        if self.piping_user == user and not self.idle:
+        if not self.idle:
             print ('bot:', string.replace(msg.strip(), self.nickname, "stranger"))
             self.omegle_bot.say(string.replace(msg.strip(),self.nickname, "stranger"))
             return
