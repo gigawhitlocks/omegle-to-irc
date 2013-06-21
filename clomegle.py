@@ -18,11 +18,11 @@ class CleverBot(irc.bot.SingleServerIRCBot):
     def on_privmsg(self, c, e):
         msg = e.arguments[0].encode("ascii", "ignore")
         if msg == "manual":
-            c.privmsg(e.source, "Set to manual")
-            self.autoreply = false
+            c.privmsg(e.source.split("!")[0], "Set to manual")
+            self.autoreply = False
         elif msg == "auto":
-            c.privmsg(e.source, "Set to auto")
-            self.autoreply = true
+            c.privmsg(e.source.split("!")[0], "Set to auto")
+            self.autoreply = True
 
     def on_pubmsg(self, c, e):
         if self.autoreply:
@@ -34,7 +34,7 @@ class CleverBot(irc.bot.SingleServerIRCBot):
                     else:
                         reply = self.bot.Ask(arg)
                         if (len(reply) > 35):
-                            sleep(1 * ((len(reply) / 35) - 1))
+                            sleep(((len(reply) / 35) - 1))
                         c.privmsg(self.channel, self.omeglenick + ": " + reply)
 
 
