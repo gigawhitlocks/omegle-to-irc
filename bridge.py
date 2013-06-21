@@ -6,6 +6,7 @@ from twisted.words.protocols import irc
 from omegletwist import OmegleBot
 import random
 
+
 def trace(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -20,8 +21,7 @@ def generate_nickname():
 #    adjectives = open("adjectives.txt","r").readlines()
 #    nouns = open("nouns.txt","r").readlines()
 #    return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
-    return "void_elm" 
-
+    return "snide-sup"
 
 def command(f):
     @functools.wraps(f)
@@ -30,8 +30,6 @@ def command(f):
 
     bridge_bot_dispatch["%s" % f.__name__] = f
 
-import string
-import re
 class BridgeBotProtocol(irc.IRCClient):
     """An irc bot that bridges to Omegle conversations."""
 
@@ -40,11 +38,12 @@ class BridgeBotProtocol(irc.IRCClient):
     #   idle_nickname
     #   omegle_bot
 
+    dontspeak = False
     idle = False  # hack to force idle on init connect
     piping_user = None
     first_message = True
     controller = None 
-    autoconnect = False
+    autoconnect = True
     lines = 1
 
     @command
@@ -128,9 +127,17 @@ class BridgeBotProtocol(irc.IRCClient):
             command = bridge_bot_dispatch.get(command_name)
             if command:
                 command(self, *args)
+
             elif not self.idle:
                 print ('bot:', msg)
-                self.omegle_bot.say(msg)
+                #self.omegle_bot.say(self.piping_user + ": " + msg)
+                self.omegle_bot.say(self.piping_user + ": " + msg)
+
+        if user != self.nickname and msg == "<stranger disconnected>":
+            self.dontspeak = True
+            self.omegle_bot.disconnect()
+            self.goIdle()
+
         if not self.idle:
             if self.nickname in msg:
                 msg = msg.split(" ")
@@ -151,8 +158,8 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def disconnectCallback(self, *args):
         print ('disconnected')
-        self.say(self.factory.channel, '<stranger disconnected>')
-        self.setNick(generate_nickname())
+        if not self.dontspeak:
+            self.say(self.factory.channel, '<stranger disconnected>')
 
         if self.autoconnect:
             bridge_bot_dispatch['connect'](self)
@@ -163,13 +170,8 @@ class BridgeBotProtocol(irc.IRCClient):
         msg = args[1][0].encode('utf-8')
         print ('stranger:', msg)
 
-        if self.piping_user and self.first_message:
+        if self.piping_user:
             msg = self.piping_user + ': ' + msg
-            self.first_message = False
-            if self.lines > random.randint(1,4):
-                self.first_message = True
-                self.lines = 1
-            self.lines += 1
 
         self.say(self.factory.channel, msg)
 
@@ -189,6 +191,7 @@ class BridgeBotProtocol(irc.IRCClient):
 
     def connectCallback(self, *args):
         print ('connected')
+        self.dontspeak = False
         self.say(self.factory.channel, '<stranger connected>')
         self.goActive()
 
