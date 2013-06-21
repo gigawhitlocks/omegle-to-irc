@@ -18,8 +18,10 @@ class CleverBot(irc.bot.SingleServerIRCBot):
     def on_privmsg(self, c, e):
         msg = e.arguments[0].encode("ascii", "ignore")
         if msg == "manual":
+            c.privmsg(e.source, "Set to manual")
             self.autoreply = false
-        else if msg == "auto":
+        elif msg == "auto":
+            c.privmsg(e.source, "Set to auto")
             self.autoreply = true
 
     def on_pubmsg(self, c, e):
