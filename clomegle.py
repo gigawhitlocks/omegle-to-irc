@@ -7,9 +7,9 @@ class CleverBot(irc.bot.SingleServerIRCBot):
     def __init__(self):
         irc.bot.SingleServerIRCBot.__init__(self, [("irc.freenode.net", 6667)], "Clomegle", "Clomegle")
         self.bot = cleverbot.Session()
-        self.omeglenick = "snide-sup"
+        self.omeglenick = "omegle-stranger"
         self.autoreply = True
-        self.channel = "##valix-offtopic"
+        self.channel = "#omegle-cleverbot"
 
 
     def on_welcome(self, c, e):
