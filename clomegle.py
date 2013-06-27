@@ -33,6 +33,9 @@ class CleverBot(irc.bot.SingleServerIRCBot):
                         c.privmsg(self.omeglenick, "disconnect")
                     else:
                         reply = self.bot.Ask(arg).lower()
+                        while (len(reply) == 0):
+                            reply = self.bot.Ask(Arg).lower()
+
                         if reply[-1] == '.':
                             reply = reply[:-1]
                         if (len(reply) > 35):
