@@ -7,9 +7,9 @@ class CleverBot(irc.bot.SingleServerIRCBot):
     def __init__(self):
         irc.bot.SingleServerIRCBot.__init__(self, [("irc.freenode.net", 6667)], "Clomegle", "Clomegle")
         self.bot = cleverbot.Session()
-        self.omeglenick = "snide-sup"
+        self.omeglenick = "omegle-stranger"
         self.autoreply = True
-        self.channel = "##valix-offtopic"
+        self.channel = "#omegle-cleverbot"
 
 
     def on_welcome(self, c, e):
@@ -32,7 +32,9 @@ class CleverBot(irc.bot.SingleServerIRCBot):
                     if (arg == "myyy caaaammm goot so daark on heeere buut looooks ok at my blooogg"):
                         c.privmsg(self.omeglenick, "disconnect")
                     else:
-                        reply = self.bot.Ask(arg)
+                        reply = self.bot.Ask(arg).lower()
+                        if reply[-1] == '.':
+                            reply = reply[:-1]
                         if (len(reply) > 35):
                             sleep(((len(reply) / 35) - 1))
                         c.privmsg(self.channel, self.omeglenick + ": " + reply)
