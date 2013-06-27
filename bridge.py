@@ -21,7 +21,7 @@ def generate_nickname():
 #    adjectives = open("adjectives.txt","r").readlines()
 #    nouns = open("nouns.txt","r").readlines()
 #    return random.choice(adjectives).strip()+random.choice(["_","-"])+random.choice(nouns).strip()
-    return "snide-sup"
+    return "omegle-stranger"
 
 def command(f):
     @functools.wraps(f)
